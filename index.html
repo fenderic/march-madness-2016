@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  background: #222;
+  margin: auto;
+  width: 960px;
+}
+
+.arc-text {
+  font: 16px sans-serif;
+}
+
+.arc-center {
+  fill: none;
+}
+
+#desc {
+  position: absolute;
+  font: 10px sans-serif;
+  right: 10px;
+  bottom: 10px;
+  color: #ddd;
+}
+
+
+</style>
+<div id="desc">Big Ten Conference Tournament</div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+var width = 960,
+    height = 800,
+    radius = Math.min(width, height) / 1.25,
+    spacing = .099;//.09;
+
+/*
+var color = d3.scale.linear()
+    .range(["hsl(-180,60%,50%)", "hsl(180,60%,50%)"])
+    .interpolate(function(a, b) { var i = d3.interpolateString(a, b); return function(t) { return d3.hsl(i(t)); }; });
+*/
+var arcBody = d3.svg.arc()
+    .startAngle(function(d) { return (d.start * 2 * Math.PI); })
+    .endAngle(function(d) { return d.end * 2 * Math.PI; })
+    .innerRadius(function(d) { return d.index * radius; })
+    .outerRadius(function(d) { return (d.index + spacing) * radius; })
+    .cornerRadius(4);
+
+var arcCenter = d3.svg.arc()
+    .startAngle(function(d) { return (d.start * 2 * Math.PI); })
+    .endAngle(function(d) { return d.end * 2 * Math.PI; })
+    .innerRadius(function(d) { return (d.index + spacing / 2) * radius; })
+    .outerRadius(function(d) { return (d.index + spacing / 2) * radius; });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+  .append("g")
+    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+var field = svg.selectAll("g")
+    .data(fields)
+  .enter().append("g");
+
+field.append("path")
+    .attr("class", "arc-body");
+
+field.append("path")
+    .attr("id", function(d, i) { return "arc-center-" + i; })
+    .attr("class", "arc-center");
+
+field.append("text")
+    .attr("dy", ".35em")
+    .attr("dx", ".75em")
+    .style("text-anchor", "start")
+  .append("textPath")
+    .attr("startOffset", "50%")
+    .attr("class", "arc-text")
+    .attr("xlink:href", function(d, i) { return "#arc-center-" + i; });
+
+tick();
+
+d3.select(self.frameElement).style("height", height + "px");
+
+function tick() {
+	console.log("tick");
+  if (!document.hidden) field
+      .each(function(d) { this._value = d.value; })
+      .data(fields)
+      .each(function(d) { d.previousValue = this._value; })
+    .transition()
+      .ease("elastic")
+      .duration(500)
+      .each(fieldTransition);
+
+//  setTimeout(tick, 1000 - Date.now() % 1000);
+}
+
+function fieldTransition() {
+  var field = d3.select(this).transition();
+
+  field.select(".arc-body")
+      .attrTween("d", arcTween(arcBody))
+      .style("fill", function(d) { return d.color; });
+
+  field.select(".arc-center")
+      .attrTween("d", arcTween(arcCenter));
+
+  field.select(".arc-text")
+      .text(function(d) { return d.text; });
+}
+
+function arcTween(arc) {
+  return function(d) {
+    var i = d3.interpolateNumber(d.previousValue, d.value);
+    return function(t) {
+      d.value = i(t);
+      return arc(d);
+    };
+  };
+}
+
+function fields() {
+  var now = new Date;
+  return [
+  	//DAY 1
+    {index: .5, text: "NEB", start: (9/32), end: (10/32), color: "#D00000"},
+    {index: .5, text: "RUT", start: (8/32), end: (9/32), color: "#cc0033"},
+    {index: .5, text: "MIN", start: (23/32), end: (24/32), color: "#7A0019"},
+    {index: .5, text: "ILL", start: (22/32), end: (23/32), color: "#E87722"},
+
+    //DAY 2
+    {index: .4, text: "UM", start: (15/16), end: (16/16), color: "#00274c"},
+    {index: .4, text: "NU", start: (14/16), end: (15/16), color: "#4E2A84"},
+    {index: .4, text: "ILL", start: (11/16), end: (12/16), color: "#E87722"},
+    {index: .4, text: "IOWA", start: (10/16), end: (11/16), color: "#FFE100"},
+    {index: .4, text: "WIS", start: (5/16), end: (6/16), color: "#B70101"},
+    {index: .4, text: "NEB", start: (4/16), end: (5/16), color: "#D00000"},
+    {index: .4, text: "OSU", start: (1/16), end: (2/16), color: "#bb0000"},
+    {index: .4, text: "PSU", start: (0/16), end: (1/16), color: "#0A0C44"},
+
+    //DAY 3
+    {index: .3, text: "UM", start: (7/8), end: (8/8), color: "#00274c"},
+    {index: .3, text: "IND", start: (6/8), end: (7/8), color: "#7D110C"},
+    {index: .3, text: "ILL", start: (5/8), end: (6/8), color: "#E87722"},
+    {index: .3, text: "PUR", start: (4/8), end: (5/8), color: "#CEB888"},
+    {index: .3, text: "UMD", start: (3/8), end: (4/8), color: "#E61938"},
+    {index: .3, text: "NEB", start: (2/8), end: (3/8), color: "#D00000"},
+    {index: .3, text: "MSU", start: (1/8), end: (2/8), color: "#18453B"},
+    {index: .3, text: "OSU", start: (0/8), end: (1/8), color: "#bb0000"},
+
+    //DAY 4
+    {index: .2, text: "UM", start: (3/4), end: (4/4), color: "#00274c"},
+    {index: .2, text: "PUR", start: (2/4), end: (3/4), color: "#CEB888"},
+    {index: .2, text: "UMD", start: (1/4), end: (2/4), color: "#E61938"},
+    {index: .2, text: "MSU", start: (0/4), end: (1/4), color: "#18453B"},
+
+    //DAY 5
+    {index: .1, text: "PUR", start: (1/2), end: (2/2), color: "#CEB888"},
+    {index: .1, text: "MSU", start: (0/1), end: (1/2), color: "#18453B"},
+
+    //CHAMPS
+    {index: 0, text: "MSU", start: (0/1), end: (1/1), color: "#18453B"}
+  ];
+}
+
+</script>
